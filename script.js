@@ -35,6 +35,9 @@ const defaultState = {
 const dataManager = {
     saveQuote: async (stateData) => {
         try {
+            // Aggiunge il campo per la ricerca case-insensitive
+            stateData.mainInputs.progetto_lowercase = stateData.mainInputs.progetto.toLowerCase();
+
             if (currentQuoteId) {
                 const quoteRef = doc(db, "quotes", currentQuoteId);
                 await setDoc(quoteRef, { ...stateData, updatedAt: new Date() }, { merge: true });
@@ -51,10 +54,11 @@ const dataManager = {
 
     findQuotesByName: async (projectName) => {
         try {
+            const searchTerm = projectName.toLowerCase(); // Converte il termine di ricerca in minuscolo
             const q = query(
                 collection(db, "quotes"),
-                where("mainInputs.progetto", ">=", projectName),
-                where("mainInputs.progetto", "<=", projectName + '\uf8ff')
+                where("mainInputs.progetto_lowercase", ">=", searchTerm),
+                where("mainInputs.progetto_lowercase", "<=", searchTerm + '\uf8ff')
             );
             const querySnapshot = await getDocs(q);
             const quotes = [];
@@ -114,9 +118,14 @@ const dataManager = {
         const q = query(collection(db, "quotes"), where("mainInputs.progetto", "==", oldName));
         const querySnapshot = await getDocs(q);
         const batch = writeBatch(db);
+        const newNameLowercase = newName.toLowerCase();
         querySnapshot.forEach(document => {
             const docRef = doc(db, "quotes", document.id);
-            batch.update(docRef, { "mainInputs.progetto": newName, updatedAt: new Date() });
+            batch.update(docRef, { 
+                "mainInputs.progetto": newName,
+                "mainInputs.progetto_lowercase": newNameLowercase,
+                updatedAt: new Date() 
+            });
         });
         await batch.commit();
         
