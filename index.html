@@ -1,406 +1,89 @@
 <!DOCTYPE html>
-<html lang="it">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Budget Planner - Progetti Formativi</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
-</head>
-<body class="bg-gray-50 text-gray-800">
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Welcome to Firebase Hosting</title>
 
-    <!-- Maschera di caricamento iniziale -->
-    <div id="initial-loader" class="fixed inset-0 bg-gray-100 flex items-center justify-center z-50">
-        <div class="w-full max-w-md p-8 bg-white rounded-xl shadow-2xl text-center">
-            <h2 class="text-2xl font-bold text-gray-800 mb-2">Carica o Crea un Preventivo</h2>
-            <p class="text-gray-500 mb-6">Cerca un preventivo esistente o inizia da capo.</p>
-            
-            <div class="space-y-4">
-                <div>
-                    <label for="initial-load-input" class="sr-only">Nome Preventivo</label>
-                    <input type="text" id="initial-load-input" list="initial-project-suggestions" placeholder="Nome preventivo da cercare..." class="table-input w-full text-center">
-                    <datalist id="initial-project-suggestions"></datalist>
-                </div>
-                <button id="initial-load-btn" class="w-full bg-blue-600 text-white font-semibold py-2.5 px-4 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-blue-300">
-                    Carica Preventivo
-                </button>
-                 <div id="initial-loader-indicator" class="h-6 text-blue-600 hidden">
-                    <div class="loading-dots"><span></span><span></span><span></span></div>
-                </div>
-                <div id="initial-loader-status" class="text-sm h-5"></div>
-                
-                <div class="relative flex py-3 items-center">
-                    <div class="flex-grow border-t border-gray-200"></div>
-                    <span class="flex-shrink mx-4 text-gray-400 text-sm">oppure</span>
-                    <div class="flex-grow border-t border-gray-200"></div>
-                </div>
+    <!-- update the version number as needed -->
+    <script defer src="/__/firebase/12.3.0/firebase-app-compat.js"></script>
+    <!-- include only the Firebase features as you need -->
+    <script defer src="/__/firebase/12.3.0/firebase-auth-compat.js"></script>
+    <script defer src="/__/firebase/12.3.0/firebase-database-compat.js"></script>
+    <script defer src="/__/firebase/12.3.0/firebase-firestore-compat.js"></script>
+    <script defer src="/__/firebase/12.3.0/firebase-functions-compat.js"></script>
+    <script defer src="/__/firebase/12.3.0/firebase-messaging-compat.js"></script>
+    <script defer src="/__/firebase/12.3.0/firebase-storage-compat.js"></script>
+    <script defer src="/__/firebase/12.3.0/firebase-analytics-compat.js"></script>
+    <script defer src="/__/firebase/12.3.0/firebase-remote-config-compat.js"></script>
+    <script defer src="/__/firebase/12.3.0/firebase-performance-compat.js"></script>
+    <!-- 
+      initialize the SDK after all desired features are loaded, set useEmulator to false
+      to avoid connecting the SDK to running emulators.
+    -->
+    <script defer src="/__/firebase/init.js?useEmulator=true"></script>
 
-                <button id="create-new-btn" class="w-full bg-gray-200 text-gray-700 font-semibold py-2.5 px-4 rounded-lg hover:bg-gray-300 transition-colors disabled:bg-gray-100">
-                    Crea Nuovo Preventivo
-                </button>
-            </div>
-            <div class="mt-6 border-t pt-4">
-                 <button id="admin-panel-btn" class="text-gray-500 hover:text-blue-600 transition-colors font-medium">Pannello Amministrazione</button>
-            </div>
-        </div>
+    <style media="screen">
+      body { background: #ECEFF1; color: rgba(0,0,0,0.87); font-family: Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; }
+      #message { background: white; max-width: 360px; margin: 100px auto 16px; padding: 32px 24px; border-radius: 3px; }
+      #message h2 { color: #ffa100; font-weight: bold; font-size: 16px; margin: 0 0 8px; }
+      #message h1 { font-size: 22px; font-weight: 300; color: rgba(0,0,0,0.6); margin: 0 0 16px;}
+      #message p { line-height: 140%; margin: 16px 0 24px; font-size: 14px; }
+      #message a { display: block; text-align: center; background: #039be5; text-transform: uppercase; text-decoration: none; color: white; padding: 16px; border-radius: 4px; }
+      #message, #message a { box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24); }
+      #load { color: rgba(0,0,0,0.4); text-align: center; font-size: 13px; }
+      @media (max-width: 600px) {
+        body, #message { margin-top: 0; background: white; box-shadow: none; }
+        body { border-top: 16px solid #ffa100; }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="message">
+      <h2>Welcome</h2>
+      <h1>Firebase Hosting Setup Complete</h1>
+      <p>You're seeing this because you've successfully setup Firebase Hosting. Now it's time to go build something extraordinary!</p>
+      <a target="_blank" href="https://firebase.google.com/docs/hosting/">Open Hosting Documentation</a>
     </div>
+    <p id="load">Firebase SDK Loading&hellip;</p>
 
-    <!-- Contenuto principale dell'applicazione (nascosto all'inizio) -->
-    <div id="main-content" class="hidden p-4 sm:p-6 md:p-8">
-        <div class="max-w-6xl mx-auto">
-             <header class="mb-4 bg-white p-6 sm:p-8 rounded-xl shadow-lg">
-                <h1 class="text-2xl sm:text-3xl font-bold text-gray-800">Budget Planner per Progetti Formativi</h1>
-                <p class="text-gray-500 mt-1">Strumento di pianificazione interna dei costi e dei ricavi.</p>
-                
-                <div class="mt-4 border-t pt-4 flex space-x-2">
-                     <button id="show-loader-btn" class="bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors">
-                         Carica un Altro Preventivo
-                    </button>
-                </div>
-    
-                <div id="save-status-container" class="mt-4">
-                     <div id="save-status" class="status-badge status-info">Pronto per iniziare.</div>
-                </div>
-            </header>
-    
-            <!-- SEZIONE 2: RIEPILOGO FINANZIARIO (STICKY) -->
-            <section id="summary-section" class="sticky top-0 z-40 mb-8 bg-gray-50/95 backdrop-blur-sm p-6 rounded-xl shadow-lg border transition-all duration-300 ease-in-out">
-                
-                <!-- Vista Completa -->
-                <div id="summary-full-view">
-                    <h2 class="text-xl font-semibold mb-4 text-gray-700 col-span-1 md:col-span-2">Riepilogo Finanziario</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
-                        <!-- Colonna 1 -->
-                        <div class="space-y-2">
-                            <div class="p-2 rounded-lg bg-blue-50 border border-blue-200">
-                                <div class="flex justify-between items-center">
-                                     <span class="font-medium text-gray-600">A. Ricavo Totale da Finanziamento:</span>
-                                     <span id="summary-ricavo" class="summary-value text-blue-700">€ 0,00</span>
-                                </div>
-                           </div>
-                           <div class="p-2 rounded-lg bg-red-50 border border-red-200">
-                                <div class="flex justify-between items-center">
-                                     <span class="font-medium text-gray-600">B. Costo Totale Progetto:</span>
-                                     <span id="summary-costo" class="summary-value text-red-700">€ 0,00</span>
-                                </div>
-                                <div class="text-xs text-gray-500 text-right -mt-1">(Somma di tutti i costi)</div>
-                           </div>
-                           <div class="p-2 rounded-lg bg-purple-50 border border-purple-200">
-                                <div class="flex justify-between items-center">
-                                     <span class="font-medium text-gray-600">C. Costo Partner 1:</span>
-                                     <span id="summary-partnership-1" class="summary-value text-purple-700">€ 0,00</span>
-                                </div>
-                           </div>
-                           <div class="p-2 rounded-lg bg-orange-50 border border-orange-200">
-                                <div class="flex justify-between items-center">
-                                     <span class="font-medium text-gray-600">D. Costo Partner 2:</span>
-                                     <span id="summary-partnership-2" class="summary-value text-orange-600">€ 0,00</span>
-                                </div>
-                           </div>
-                            <div class="p-2 rounded-lg bg-gray-100 border border-gray-200">
-                                <div class="flex justify-between items-center">
-                                     <span class="font-medium text-gray-600">E. Guadagno Azienda (costi interni):</span>
-                                     <span id="summary-azienda" class="summary-value text-gray-700">€ 0,00</span>
-                                </div>
-                            </div>
-                            <div class="p-2 rounded-lg bg-gray-100 border border-gray-200">
-                                <div class="flex justify-between items-center">
-                                    <span class="font-medium text-gray-600">F. Altri Costi:</span>
-                                    <span id="summary-esterno" class="summary-value text-gray-700">€ 0,00</span>
-                                </div>
-                                <div class="text-xs text-gray-500 text-right -mt-1">(Gestione + non attribuiti)</div>
-                            </div>
-                        </div>
-                        <!-- Colonna 2 -->
-                        <div class="space-y-2">
-                            <div class="p-2 rounded-lg bg-gray-100 border border-gray-200">
-                                <div class="flex justify-between items-center">
-                                    <span class="font-medium text-gray-600">Incidenza Partner 1:</span>
-                                    <span id="summary-incidenza-partnership-1" class="summary-value text-gray-800">0,00 %</span>
-                                </div>
-                               <div class="text-xs text-gray-500 text-right -mt-1">(C / A)</div>
-                            </div>
-                            <div class="p-2 rounded-lg bg-gray-100 border border-gray-200">
-                                <div class="flex justify-between items-center">
-                                     <span class="font-medium text-gray-600">Incidenza Partner 2:</span>
-                                     <span id="summary-incidenza-partnership-2" class="summary-value text-gray-800">0,00 %</span>
-                                </div>
-                                <div class="text-xs text-gray-500 text-right -mt-1">(D / A)</div>
-                            </div>
-                            <div class="p-2 rounded-lg bg-gray-100 border border-gray-200">
-                               <div class="flex justify-between items-center">
-                                    <span class="font-medium text-gray-600">Incidenza Altri Costi:</span>
-                                    <span id="summary-incidenza-esterni" class="summary-value text-gray-800">0,00 %</span>
-                               </div>
-                               <div class="text-xs text-gray-500 text-right -mt-1">(F / A)</div>
-                            </div>
-                            <div class="p-2 rounded-lg bg-gray-100 border border-gray-200">
-                               <div class="flex justify-between items-center">
-                                    <span class="font-medium text-gray-600">Incidenza Azienda:</span>
-                                    <span id="summary-incidenza-azienda" class="summary-value text-gray-800">0,00 %</span>
-                               </div>
-                               <div class="text-xs text-gray-500 text-right -mt-1">(Margine / A)</div>
-                            </div>
-                            <div class="p-2 rounded-lg bg-green-50 border border-green-200 mt-2">
-                                <div class="flex justify-between items-center">
-                                     <span class="font-bold text-gray-800 text-lg">MARGINE:</span>
-                                     <span id="summary-margine" class="summary-value">€ 0,00</span>
-                                </div>
-                                <div class="text-xs text-gray-500 text-right -mt-1">(A - B + E)</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const loadEl = document.querySelector('#load');
+        // // 🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
+        // // The Firebase SDK is initialized and available here!
+        //
+        // firebase.auth().onAuthStateChanged(user => { });
+        // firebase.database().ref('/path/to/ref').on('value', snapshot => { });
+        // firebase.firestore().doc('/foo/bar').get().then(() => { });
+        // firebase.functions().httpsCallable('yourFunction')().then(() => { });
+        // firebase.messaging().requestPermission().then(() => { });
+        // firebase.storage().ref('/path/to/ref').getDownloadURL().then(() => { });
+        // firebase.analytics(); // call to activate
+        // firebase.analytics().logEvent('tutorial_completed');
+        // firebase.performance(); // call to activate
+        //
+        // // 🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
 
-                <!-- Vista Compressa (nascosta di default) -->
-                <div id="summary-compressed-view" class="hidden">
-                     <div class="grid grid-cols-3 gap-x-4 gap-y-2 text-center">
-                        <!-- Row 1 -->
-                        <div>
-                            <span class="text-xs font-medium text-gray-600">Ricavo Totale</span>
-                            <span id="compressed-summary-ricavo" class="block summary-value text-blue-700 text-base">€ 0,00</span>
-                        </div>
-                        <div>
-                            <span class="text-xs font-medium text-gray-600">Costo Totale Progetto</span>
-                            <span id="compressed-summary-costo" class="block summary-value text-red-700 text-base">€ 0,00</span>
-                        </div>
-                        <div>
-                            <span class="text-xs font-bold text-gray-800">MARGINE</span>
-                            <span id="compressed-summary-margine" class="block summary-value text-base">€ 0,00</span>
-                        </div>
-                        <!-- Row 2 -->
-                        <div>
-                            <span class="text-xs font-medium text-gray-600">Costo Partner 1</span>
-                            <span id="compressed-summary-partnership-1" class="block summary-value text-purple-700 text-base">€ 0,00</span>
-                        </div>
-                        <div>
-                            <span class="text-xs font-medium text-gray-600">Costo Partner 2</span>
-                            <span id="compressed-summary-partnership-2" class="block summary-value text-orange-600 text-base">€ 0,00</span>
-                        </div>
-                        <div>
-                            <span class="text-xs font-medium text-gray-600">Altri Costi</span>
-                            <span id="compressed-summary-esterno" class="block summary-value text-gray-700 text-base">€ 0,00</span>
-                        </div>
-                    </div>
-                </div>
-
-            </section>
-
-            <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
-                <!-- SEZIONE 1: DATI DI INPUT -->
-                <section id="main-inputs-section" class="mb-8">
-                    <h2 class="text-xl font-semibold mb-3 text-gray-700">Dati di Input</h2>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                        <div>
-                            <label for="input-progetto" class="block text-sm font-medium text-gray-600 mb-1">Nome Progetto:</label>
-                            <input type="text" id="input-progetto" class="table-input w-full" value="Nuovo Corso">
-                        </div>
-                        <div>
-                            <label for="input-allievi" class="block text-sm font-medium text-gray-600 mb-1">Numero Allievi:</label>
-                            <input type="number" id="input-allievi" class="table-input w-full" value="10">
-                        </div>
-                        <div>
-                            <label for="input-ore" class="block text-sm font-medium text-gray-600 mb-1">Ore Totali Corso:</label>
-                            <input type="number" id="input-ore" class="table-input w-full" value="80">
-                        </div>
-                        <div>
-                            <label for="input-ucs" class="block text-sm font-medium text-gray-600 mb-1">UCS Applicata (€):</label>
-                            <input type="text" id="input-ucs" class="table-input w-full" value="23,99">
-                        </div>
-                    </div>
-                </section>
-        
-                <section id="costs-section">
-                    <h2 class="text-xl font-semibold mb-4 text-gray-700">Dettaglio Costi di Progetto</h2>
-                    
-                    <div class="space-y-8">
-                        <!-- Tabella Gestione -->
-                        <div class="overflow-x-auto">
-                            <div class="flex justify-between items-center mb-2">
-                                <h3 class="font-semibold text-lg text-gray-600">Funzionamento e Gestione</h3>
-                                <button class="add-row-btn" onclick="addRow('gestione')">+ Aggiungi Riga</button>
-                            </div>
-                            <table class="min-w-full bg-white border" data-section="gestione">
-                                <thead class="bg-gray-100">
-                                    <tr>
-                                        <th class="p-3 text-left text-sm font-semibold text-gray-600 w-2/5">Voce di Costo</th>
-                                        <th class="p-3 text-left text-sm font-semibold text-gray-600">Costo Unitario (€)</th>
-                                        <th class="p-3 text-left text-sm font-semibold text-gray-600">Quantità</th>
-                                        <th class="p-3 text-left text-sm font-semibold text-gray-600">Note</th>
-                                        <th class="p-3 text-right text-sm font-semibold text-gray-600 w-1/6">Subtotale (€)</th>
-                                        <th class="p-3 text-center text-sm font-semibold text-gray-600 w-[5%]"></th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y">
-                                </tbody>
-                                <tfoot>
-                                    <tr class="bg-gray-100">
-                                        <td colspan="5" class="p-3 text-right font-bold text-gray-700">TOTALE GESTIONE</td>
-                                        <td id="total-gestione" class="p-3 text-right font-bold text-gray-800">€ 0,00</td>
-                                    </tr>
-                                </tfoot>
-                            </table>
-                        </div>
-        
-                        <!-- Tabella Realizzazione -->
-                        <div class="overflow-x-auto">
-                            <div class="flex justify-between items-center mb-2">
-                                <h3 class="font-semibold text-lg text-gray-600">Realizzazione</h3>
-                                <button class="add-row-btn" onclick="addRow('realizzazione')">+ Aggiungi Riga</button>
-                            </div>
-                            <table class="min-w-full bg-white border" data-section="realizzazione">
-                                 <thead class="bg-gray-100">
-                                    <tr>
-                                        <th class="p-3 text-left text-sm font-semibold text-gray-600" style="width: 35%;">Voce di Costo</th>
-                                        <th class="p-3 text-left text-sm font-semibold text-gray-600">Tariffa Oraria (€)</th>
-                                        <th class="p-3 text-left text-sm font-semibold text-gray-600">Ore</th>
-                                        <th class="p-3 text-right text-sm font-semibold text-gray-600">Subtotale (€)</th>
-                                        <th class="p-3 text-center text-sm font-semibold text-gray-600 w-[5%]">Partner 1</th>
-                                        <th class="p-3 text-center text-sm font-semibold text-gray-600 w-[5%]">Azienda</th>
-                                        <th class="p-3 text-center text-sm font-semibold text-gray-600 w-[5%]"></th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y">
-                                </tbody>
-                                 <tfoot>
-                                    <tr class="bg-gray-100">
-                                        <td colspan="6" class="p-3 text-right font-bold text-gray-700">TOTALE REALIZZAZIONE</td>
-                                        <td id="total-realizzazione" class="p-3 text-right font-bold text-gray-800">€ 0,00</td>
-                                    </tr>
-                                </tfoot>
-                            </table>
-                        </div>
-                        
-                        <!-- Tabella Docenze -->
-                        <div class="overflow-x-auto">
-                            <div class="flex justify-between items-center mb-2">
-                                <h3 class="font-semibold text-lg text-gray-600">Docenze</h3>
-                                <button class="add-row-btn" onclick="addRow('docenze')">+ Aggiungi Riga</button>
-                            </div>
-                            <table class="min-w-full bg-white border" data-section="docenze">
-                                 <thead class="bg-gray-100">
-                                    <tr>
-                                        <th class="p-3 text-left text-sm font-semibold text-gray-600" style="width: 35%;">Docente</th>
-                                        <th class="p-3 text-left text-sm font-semibold text-gray-600">Tariffa Oraria (€)</th>
-                                        <th class="p-3 text-left text-sm font-semibold text-gray-600">Ore</th>
-                                        <th class="p-3 text-right text-sm font-semibold text-gray-600">Subtotale (€)</th>
-                                        <th class="p-3 text-center text-sm font-semibold text-gray-600 w-[5%]">Partner 2</th>
-                                        <th class="p-3 text-center text-sm font-semibold text-gray-600 w-[5%]">Azienda</th>
-                                        <th class="p-3 text-center text-sm font-semibold text-gray-600 w-[5%]"></th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y">
-                                </tbody>
-                                 <tfoot>
-                                    <tr class="bg-gray-100">
-                                        <td colspan="6" class="p-3 text-right font-bold text-gray-700">TOTALE DOCENZE</td>
-                                        <td id="total-docenze" class="p-3 text-right font-bold text-gray-800">€ 0,00</td>
-                                    </tr>
-                                </tfoot>
-                            </table>
-                        </div>
-        
-                        <!-- Tabella Commerciale -->
-                         <div class="overflow-x-auto">
-                            <div class="flex justify-between items-center mb-2">
-                                <h3 class="font-semibold text-lg text-gray-600">Commerciale</h3>
-                            </div>
-                            <table class="min-w-full bg-white border" data-section="commerciale">
-                                <thead class="bg-gray-100">
-                                    <tr>
-                                        <th class="p-3 text-left text-sm font-semibold text-gray-600 w-2/5">Voce di Costo</th>
-                                        <th class="p-3 text-left text-sm font-semibold text-gray-600">Percentuale (%)</th>
-                                        <th class="p-3 text-left text-sm font-semibold text-gray-600">Note</th>
-                                        <th class="p-3 text-right text-sm font-semibold text-gray-600 w-1/6">Subtotale (€)</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y">
-                                    <tr class="cost-row">
-                                        <td class="p-2 static-label">Fee Partner 1</td>
-                                        <td class="p-2"><input type="text" class="table-input" data-field="percent_p1" value="10,00"></td>
-                                        <td class="p-2"><input type="text" class="table-input" data-field="note_p1" value="Sul ricavo totale"></td>
-                                        <td class="p-2 text-right output-cell" id="subtotal_p1">€ 0,00</td>
-                                    </tr>
-                                    <tr class="cost-row">
-                                        <td class="p-2 static-label">Fee Partner 2</td>
-                                        <td class="p-2"><input type="text" class="table-input" data-field="percent_p2" value="5,00"></td>
-                                        <td class="p-2"><input type="text" class="table-input" data-field="note_p2" value="Sul ricavo totale"></td>
-                                        <td class="p-2 text-right output-cell" id="subtotal_p2">€ 0,00</td>
-                                    </tr>
-                                </tbody>
-                                <tfoot>
-                                    <tr class="bg-gray-100">
-                                        <td colspan="3" class="p-3 text-right font-bold text-gray-700">TOTALE COMMERCIALE</td>
-                                        <td id="total-commerciale" class="p-3 text-right font-bold text-gray-800">€ 0,00</td>
-                                    </tr>
-                                </tfoot>
-                            </table>
-                        </div>
-        
-                    </div>
-                </section>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Modal per la selezione del preventivo -->
-    <div id="quotes-modal" class="modal">
-        <div class="modal-content">
-            <div class="flex justify-between items-center mb-4">
-                <h3 id="modal-title" class="text-xl font-semibold">Seleziona un Preventivo</h3>
-                <button id="close-modal-btn" class="close-btn">&times;</button>
-            </div>
-            <div id="quotes-list" class="space-y-2 max-h-80 overflow-y-auto">
-                <!-- I preventivi verranno inseriti qui dal JS -->
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal per l'inserimento della password del preventivo -->
-    <div id="password-modal" class="modal">
-        <div class="modal-content">
-            <h3 id="password-modal-title" class="text-xl font-semibold mb-4">Inserisci Password</h3>
-            <input type="password" id="password-input" class="table-input w-full mb-4" placeholder="Password...">
-            <div id="password-error" class="text-red-500 text-sm mb-4 h-5"></div>
-            <div class="flex justify-end space-x-2">
-                <button id="password-cancel-btn" class="bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300">Annulla</button>
-                <button id="password-submit-btn" class="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700">Conferma</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal per il Pannello Admin -->
-    <div id="admin-modal" class="modal">
-        <div class="modal-content max-w-2xl">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-xl font-semibold">Pannello Amministrazione</h3>
-                <button id="admin-close-btn" class="close-btn">&times;</button>
-            </div>
-            
-            <div class="space-y-6">
-                <!-- Gestione Master Password -->
-                <div>
-                    <h4 class="font-semibold text-lg text-gray-700 mb-2 border-b pb-2">Master Password</h4>
-                    <div class="flex items-center space-x-2">
-                        <input type="password" id="admin-master-password-input" class="table-input flex-grow" placeholder="Nuova master password...">
-                        <button id="admin-save-master-password-btn" class="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700">Salva</button>
-                    </div>
-                </div>
-
-                <!-- Gestione Password Progetti -->
-                <div>
-                    <h4 class="font-semibold text-lg text-gray-700 mb-2 border-b pb-2">Gestione Preventivi</h4>
-                    <div id="admin-project-passwords-list" class="space-y-2 max-h-80 overflow-y-auto">
-                        <!-- Elenco progetti inserito da JS -->
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-
-    <script src="script.js"></script>
-</body>
+        try {
+          let app = firebase.app();
+          let features = [
+            'auth', 
+            'database', 
+            'firestore',
+            'functions',
+            'messaging', 
+            'storage', 
+            'analytics', 
+            'remoteConfig',
+            'performance',
+          ].filter(feature => typeof app[feature] === 'function');
+          loadEl.textContent = `Firebase SDK loaded with ${features.join(', ')}`;
+        } catch (e) {
+          console.error(e);
+          loadEl.textContent = 'Error loading the Firebase SDK, check the console.';
+        }
+      });
+    </script>
+  </body>
 </html>
-
