@@ -129,27 +129,24 @@ body { font-family: 'Inter', sans-serif; }
 .close-btn:hover {
     color: #1f2937; /* gray-800 */
 }
-.admin-action-btn {
+
+.action-btn {
+    background-color: #e5e7eb;
+    color: #4b5563;
+    border-radius: 0.375rem;
+    width: 32px;
+    height: 32px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 32px;
-    height: 32px;
-    border-radius: 0.375rem;
-    background-color: #e5e7eb;
-    color: #4b5563;
     transition: background-color 0.2s, color 0.2s;
 }
-.admin-action-btn:hover {
+.action-btn:hover {
     background-color: #d1d5db;
     color: #1f2937;
 }
-.admin-action-btn.save-project-pwd-btn:hover {
-    background-color: #dbeafe; /* blue-100 */
-    color: #2563eb; /* blue-600 */
-}
-.admin-action-btn.delete-project-btn:hover {
-    background-color: #fee2e2; /* red-100 */
-    color: #dc2626; /* red-600 */
+.action-btn.delete-btn:hover {
+    background-color: #fee2e2;
+    color: #ef4444;
 }
 
