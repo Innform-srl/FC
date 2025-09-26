@@ -11,7 +11,7 @@ const firebaseConfig = {
 // Importa le funzioni necessarie dagli SDK di Firebase
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
 import { 
-    getFirestore, collection, getDocs, getDoc, doc, addDoc, setDoc, deleteDoc, query, where, writeBatch
+    getFirestore, collection, getDocs, getDoc, doc, addDoc, setDoc, deleteDoc, query, where, writeBatch, arrayUnion, updateDoc
 } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
 
 // Inizializza Firebase
@@ -35,9 +35,7 @@ const defaultState = {
 const dataManager = {
     saveQuote: async (stateData) => {
         try {
-            // Aggiunge il campo per la ricerca case-insensitive
             stateData.mainInputs.progetto_lowercase = stateData.mainInputs.progetto.toLowerCase();
-
             if (currentQuoteId) {
                 const quoteRef = doc(db, "quotes", currentQuoteId);
                 await setDoc(quoteRef, { ...stateData, updatedAt: new Date() }, { merge: true });
@@ -54,7 +52,7 @@ const dataManager = {
 
     findQuotesByName: async (projectName) => {
         try {
-            const searchTerm = projectName.toLowerCase(); // Converte il termine di ricerca in minuscolo
+            const searchTerm = projectName.toLowerCase();
             const q = query(
                 collection(db, "quotes"),
                 where("mainInputs.progetto_lowercase", ">=", searchTerm),
@@ -69,7 +67,6 @@ const dataManager = {
                 }
                 quotes.push({ id: doc.id, ...data });
             });
-
             const latestQuotesMap = new Map();
             quotes.forEach(quote => {
                 const name = quote.mainInputs.progetto;
@@ -80,7 +77,7 @@ const dataManager = {
             return Array.from(latestQuotesMap.values());
         } catch (error) {
             console.error("Errore durante la ricerca dei preventivi:", error);
-            alert("Si è verificato un errore durante la ricerca. Controlla la console del browser (tasto F12) per i dettagli. Potrebbe essere necessario creare un indice in Firestore.");
+            alert("Si è verificato un errore durante la ricerca. Potrebbe essere necessario creare un indice in Firestore.");
             return [];
         }
     },
@@ -151,6 +148,35 @@ const dataManager = {
             delete securityData[projectName];
             await dataManager.saveSecurityData(securityData);
         }
+    },
+    
+    // NUOVA FUNZIONE PER LE NOTE
+    addNote: async (projectName, noteText) => {
+        const noteRef = doc(db, "notes", projectName);
+        const note = {
+            text: noteText,
+            timestamp: new Date()
+        };
+        try {
+            await updateDoc(noteRef, {
+                entries: arrayUnion(note)
+            });
+        } catch (error) {
+            if (error.code === 'not-found') {
+                await setDoc(noteRef, { entries: [note] });
+            } else {
+                console.error("Errore nell'aggiungere la nota:", error);
+            }
+        }
+    },
+
+    getAllNotes: async () => {
+        const querySnapshot = await getDocs(collection(db, "notes"));
+        const allNotes = {};
+        querySnapshot.forEach(doc => {
+            allNotes[doc.id] = doc.data().entries;
+        });
+        return allNotes;
     }
 };
 
@@ -408,13 +434,14 @@ async function openAdminPanel() {
     const adminModal = document.getElementById('admin-modal');
     adminModal.classList.add('open');
     
-    const projectListContainer = document.getElementById('admin-project-passwords-list');
+    const projectListContainer = document.getElementById('admin-project-list');
     projectListContainer.innerHTML = '<div class="loading-dots text-center p-4"><span></span><span></span><span></span></div>';
     
     try {
-        const [allNames, security] = await Promise.all([
+        const [allNames, security, allNotes] = await Promise.all([
             dataManager.getAllProjectNames(),
-            dataManager.getSecurityData()
+            dataManager.getSecurityData(),
+            dataManager.getAllNotes()
         ]);
         
         projectListContainer.innerHTML = '';
@@ -426,14 +453,37 @@ async function openAdminPanel() {
 
         allNames.forEach(name => {
             const currentPassword = security[name] || '';
+            const projectNotes = allNotes[name] || [];
+
             const projectEl = document.createElement('div');
-            projectEl.className = 'flex items-center space-x-2 p-2 bg-gray-100 rounded-md';
+            projectEl.className = 'admin-project-item';
+            
+            let notesHtml = '<p class="text-xs text-gray-500 italic px-2">Nessuna nota presente.</p>';
+            if (projectNotes.length > 0) {
+                notesHtml = '<ul class="space-y-2 text-sm">';
+                projectNotes.sort((a, b) => b.timestamp.toDate() - a.timestamp.toDate()).forEach(note => {
+                    const date = note.timestamp.toDate().toLocaleString('it-IT');
+                    notesHtml += `<li class="border-b border-gray-200 pb-1"><span class="font-semibold text-gray-500">${date}:</span> ${note.text}</li>`;
+                });
+                notesHtml += '</ul>';
+            }
+
             projectEl.innerHTML = `
-                <span class="font-medium text-gray-800 flex-grow">${name}</span>
-                <input type="text" class="table-input w-40" placeholder="Password" value="${currentPassword}">
-                <button class="action-btn save-btn" title="Salva Password"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg></button>
-                <button class="action-btn rename-btn" title="Rinomina Preventivo"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>
-                <button class="action-btn delete-btn" title="Elimina Preventivo"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
+                <div class="flex items-center space-x-2 p-2 bg-gray-100 rounded-md">
+                    <span class="font-medium text-gray-800 flex-grow">${name}</span>
+                    <input type="text" class="table-input w-40" placeholder="Password" value="${currentPassword}">
+                    <button class="action-btn save-btn" title="Salva Password"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg></button>
+                    <button class="action-btn rename-btn" title="Rinomina Preventivo"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>
+                    <button class="action-btn delete-btn" title="Elimina Preventivo"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
+                </div>
+                <div class="notes-section">
+                    <details class="notes-details">
+                        <summary class="notes-summary">Visualizza Note (${projectNotes.length})</summary>
+                        <div class="notes-content">
+                            ${notesHtml}
+                        </div>
+                    </details>
+                </div>
             `;
 
             const passwordInput = projectEl.querySelector('input');
@@ -583,6 +633,19 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('admin-master-password-input').value = '';
         } else {
             alert("La master password deve essere di almeno 4 caratteri.");
+        }
+    });
+
+    document.getElementById('add-note-btn').addEventListener('click', async () => {
+        const projectName = document.getElementById('input-progetto').value;
+        if (!projectName) {
+            alert("Carica o crea un preventivo prima di aggiungere una nota.");
+            return;
+        }
+        const noteText = prompt(`Inserisci una nota per "${projectName}":`);
+        if (noteText && noteText.trim() !== "") {
+            await dataManager.addNote(projectName, noteText.trim());
+            alert("Nota salvata con successo!");
         }
     });
     

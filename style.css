@@ -150,3 +150,29 @@ body { font-family: 'Inter', sans-serif; }
     color: #ef4444;
 }
 
+/* Stili per la sezione note nel pannello admin */
+.admin-project-item {
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    overflow: hidden;
+}
+.notes-details {
+    margin-top: -1px;
+}
+.notes-summary {
+    cursor: pointer;
+    padding: 0.5rem 0.75rem;
+    background-color: #f9fafb;
+    color: #3b82f6;
+    font-weight: 500;
+    font-size: 0.875rem;
+    list-style: none; /* Rimuove la freccia di default */
+}
+.notes-summary::-webkit-details-marker {
+    display: none; /* Rimuove la freccia di default in Chrome/Safari */
+}
+.notes-content {
+    padding: 0.75rem;
+    background-color: #ffffff;
+}
+
