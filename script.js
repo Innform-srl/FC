@@ -22,6 +22,7 @@ const db = getFirestore(app);
 let isReadyForSaving = false;
 let currentQuoteId = null;
 let selectedQuoteToLoad = null;
+let isAdminAuthenticated = false;
 
 const defaultState = {
     mainInputs: { progetto: 'Nuovo Progetto', allievi: '10', ore: '80', ucs: '23,99' },
@@ -35,7 +36,6 @@ const defaultState = {
 const dataManager = {
     saveQuote: async (stateData) => {
         try {
-            stateData.mainInputs.progetto_lowercase = stateData.mainInputs.progetto.toLowerCase();
             if (currentQuoteId) {
                 const quoteRef = doc(db, "quotes", currentQuoteId);
                 await setDoc(quoteRef, { ...stateData, updatedAt: new Date() }, { merge: true });
@@ -53,20 +53,20 @@ const dataManager = {
     findQuotesByName: async (projectName) => {
         try {
             const searchTerm = projectName.toLowerCase();
-            const q = query(
-                collection(db, "quotes"),
-                where("mainInputs.progetto_lowercase", ">=", searchTerm),
-                where("mainInputs.progetto_lowercase", "<=", searchTerm + '\uf8ff')
-            );
+            const q = query(collection(db, "quotes"));
             const querySnapshot = await getDocs(q);
             const quotes = [];
+            
             querySnapshot.forEach((doc) => {
                 const data = doc.data();
-                if (data.updatedAt && typeof data.updatedAt.toDate === 'function') {
-                    data.updatedAt = data.updatedAt.toDate();
+                if (data.mainInputs && data.mainInputs.progetto && data.mainInputs.progetto.toLowerCase().includes(searchTerm)) {
+                    if (data.updatedAt && typeof data.updatedAt.toDate === 'function') {
+                        data.updatedAt = data.updatedAt.toDate();
+                    }
+                    quotes.push({ id: doc.id, ...data });
                 }
-                quotes.push({ id: doc.id, ...data });
             });
+
             const latestQuotesMap = new Map();
             quotes.forEach(quote => {
                 const name = quote.mainInputs.progetto;
@@ -77,7 +77,7 @@ const dataManager = {
             return Array.from(latestQuotesMap.values());
         } catch (error) {
             console.error("Errore durante la ricerca dei preventivi:", error);
-            alert("Si è verificato un errore durante la ricerca. Potrebbe essere necessario creare un indice in Firestore.");
+            alert("Si è verificato un errore durante la ricerca. Controlla la console del browser (tasto F12) per i dettagli.");
             return [];
         }
     },
@@ -115,12 +115,10 @@ const dataManager = {
         const q = query(collection(db, "quotes"), where("mainInputs.progetto", "==", oldName));
         const querySnapshot = await getDocs(q);
         const batch = writeBatch(db);
-        const newNameLowercase = newName.toLowerCase();
         querySnapshot.forEach(document => {
             const docRef = doc(db, "quotes", document.id);
             batch.update(docRef, { 
                 "mainInputs.progetto": newName,
-                "mainInputs.progetto_lowercase": newNameLowercase,
                 updatedAt: new Date() 
             });
         });
@@ -150,24 +148,33 @@ const dataManager = {
         }
     },
     
-    // NUOVA FUNZIONE PER LE NOTE
     addNote: async (projectName, noteText) => {
         const noteRef = doc(db, "notes", projectName);
-        const note = {
+        const newNoteEntry = {
             text: noteText,
             timestamp: new Date()
         };
         try {
             await updateDoc(noteRef, {
-                entries: arrayUnion(note)
+                entries: arrayUnion(newNoteEntry)
             });
         } catch (error) {
             if (error.code === 'not-found') {
-                await setDoc(noteRef, { entries: [note] });
+                await setDoc(noteRef, { entries: [newNoteEntry] });
             } else {
                 console.error("Errore nell'aggiungere la nota:", error);
+                throw error;
             }
         }
+    },
+    
+    getNotesForProject: async (projectName) => {
+        const noteRef = doc(db, "notes", projectName);
+        const docSnap = await getDoc(noteRef);
+        if (docSnap.exists()) {
+            return docSnap.data().entries || [];
+        }
+        return [];
     },
 
     getAllNotes: async () => {
@@ -221,35 +228,49 @@ const deleteRow = (button) => { isReadyForSaving = true; const row = button.clos
 window.deleteRow = deleteRow;
 
 const parseLocalFloat = (str) => { if (typeof str !== 'string' && typeof str !== 'number') return 0; return parseFloat(String(str).replace(/\./g, '').replace(',', '.')) || 0; }
+
 const calculateAll = () => {
     const formatCurrency = (value) => new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(value);
     const allievi = parseLocalFloat(document.getElementById('input-allievi').value);
     const ore = parseLocalFloat(document.getElementById('input-ore').value);
     const ucs = parseLocalFloat(document.getElementById('input-ucs').value);
     const ricavoTotale = allievi * ore * ucs;
+
     document.getElementById('summary-ricavo').textContent = formatCurrency(ricavoTotale);
     document.getElementById('compressed-summary-ricavo').textContent = formatCurrency(ricavoTotale);
 
     let costoTotaleProgetto = 0, costoAziendaTotale = 0, docenzePartner2Total = 0, realizzazionePartner1Total = 0, costoEsternoTotale = 0, gestioneTotal = 0;
+
     ['gestione', 'realizzazione', 'docenze'].forEach(sectionId => {
         let sectionTotal = 0;
         document.querySelectorAll(`table[data-section="${sectionId}"] tbody .cost-row`).forEach(row => {
-            const costoUnitario = parseLocalFloat(row.querySelector('.cost-unitario').value);
-            const quantita = parseLocalFloat(row.querySelector('.quantita').value);
-            const subtotal = costoUnitario * quantita;
-            row.querySelector('.output-cell').textContent = formatCurrency(subtotal);
-            sectionTotal += subtotal;
-            const isPartner = row.querySelector('[data-field=partner]')?.checked || false;
-            const isAzienda = row.querySelector('[data-field=azienda]')?.checked || false;
-            if (isAzienda) costoAziendaTotale += subtotal;
-            if(sectionId === 'docenze' && isPartner) docenzePartner2Total += subtotal;
-            if(sectionId === 'realizzazione' && isPartner) realizzazionePartner1Total += subtotal;
-            if (sectionId !== 'gestione' && !isPartner && !isAzienda) costoEsternoTotale += subtotal;
+            const costoUnitarioInput = row.querySelector('.cost-unitario');
+            const quantitaInput = row.querySelector('.quantita');
+
+            if (costoUnitarioInput && quantitaInput) {
+                const costoUnitario = parseLocalFloat(costoUnitarioInput.value);
+                const quantita = parseLocalFloat(quantitaInput.value);
+                const subtotal = costoUnitario * quantita;
+                
+                const outputCell = row.querySelector('.output-cell');
+                if (outputCell) outputCell.textContent = formatCurrency(subtotal);
+                
+                sectionTotal += subtotal;
+                
+                const isPartner = row.querySelector('[data-field=partner]')?.checked || false;
+                const isAzienda = row.querySelector('[data-field=azienda]')?.checked || false;
+                
+                if (isAzienda) costoAziendaTotale += subtotal;
+                if (sectionId === 'docenze' && isPartner) docenzePartner2Total += subtotal;
+                if (sectionId === 'realizzazione' && isPartner) realizzazionePartner1Total += subtotal;
+                if (sectionId !== 'gestione' && !isPartner && !isAzienda) costoEsternoTotale += subtotal;
+            }
         });
         if (sectionId === 'gestione') gestioneTotal = sectionTotal;
         document.getElementById(`total-${sectionId}`).textContent = formatCurrency(sectionTotal);
         costoTotaleProgetto += sectionTotal;
     });
+
     const percentP1 = parseLocalFloat(document.querySelector('[data-field=percent_p1]').value);
     const costoCommP1 = ricavoTotale * (percentP1 / 100);
     document.getElementById('subtotal_p1').textContent = formatCurrency(costoCommP1);
@@ -259,6 +280,7 @@ const calculateAll = () => {
     const totaleCommerciale = costoCommP1 + costoCommP2;
     document.getElementById('total-commerciale').textContent = formatCurrency(totaleCommerciale);
     costoTotaleProgetto += totaleCommerciale;
+
     document.getElementById('summary-costo').textContent = formatCurrency(costoTotaleProgetto);
     document.getElementById('compressed-summary-costo').textContent = formatCurrency(costoTotaleProgetto);
 
@@ -525,6 +547,28 @@ async function openAdminPanel() {
     }
 }
 
+async function requireAdminAuth(callback) {
+    if (isAdminAuthenticated) {
+        callback();
+        return;
+    }
+
+    const password = prompt("Per sicurezza, inserisci la master password:");
+    if (password === null) return;
+
+    try {
+        const security = await dataManager.getSecurityData();
+        if (password === security.masterPassword) {
+            isAdminAuthenticated = true;
+            callback();
+        } else {
+            alert("Master password errata.");
+        }
+    } catch (error) {
+        alert("Impossibile verificare la password. Controllare la connessione al database.");
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     const statusEl = document.getElementById('initial-loader-status');
     const initialLoaderBtn = document.getElementById('initial-load-btn');
@@ -534,6 +578,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const quotesModal = document.getElementById('quotes-modal');
     const passwordModal = document.getElementById('password-modal');
+    const noteModal = document.getElementById('note-modal');
 
     const initializeApp = async () => {
         try {
@@ -607,20 +652,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    adminPanelBtn.addEventListener('click', async () => {
-        const password = prompt("Inserisci la master password:");
-        if (password === null) return;
-        
-        try {
-            const security = await dataManager.getSecurityData();
-            if (password === security.masterPassword) {
-                openAdminPanel();
-            } else {
-                alert("Master password errata.");
-            }
-        } catch (error) {
-            alert("Impossibile verificare la password. Controllare la connessione al database.");
-        }
+    adminPanelBtn.addEventListener('click', () => {
+        requireAdminAuth(openAdminPanel);
     });
     
     document.getElementById('admin-save-master-password-btn').addEventListener('click', async () => {
@@ -636,16 +669,48 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    document.getElementById('add-note-btn').addEventListener('click', async () => {
+    document.getElementById('add-note-btn').addEventListener('click', () => {
+        requireAdminAuth(async () => {
+            const projectName = document.getElementById('input-progetto').value;
+            if (!projectName) return;
+
+            const noteModal = document.getElementById('note-modal');
+            const existingNotesContainer = document.getElementById('existing-notes-container');
+            const newNoteTextarea = document.getElementById('new-note-textarea');
+            
+            document.getElementById('note-modal-title').textContent = `Note per "${projectName}"`;
+            existingNotesContainer.innerHTML = '<div class="loading-dots"><span></span><span></span><span></span></div>';
+            newNoteTextarea.value = '';
+            noteModal.classList.add('open');
+
+            const notes = await dataManager.getNotesForProject(projectName);
+            
+            if (notes.length > 0) {
+                let notesHtml = '<ul class="space-y-2 text-sm">';
+                notes.sort((a,b) => b.timestamp.toDate() - a.timestamp.toDate()).forEach(note => {
+                     notesHtml += `<li class="border-b border-gray-200 pb-1"><span class="font-semibold text-gray-500">${note.timestamp.toDate().toLocaleString('it-IT')}:</span> ${note.text}</li>`;
+                });
+                notesHtml += '</ul>';
+                existingNotesContainer.innerHTML = notesHtml;
+            } else {
+                existingNotesContainer.innerHTML = '<p class="text-gray-400 italic">Nessuna nota precedente.</p>';
+            }
+        });
+    });
+
+    document.getElementById('note-save-btn').addEventListener('click', async () => {
         const projectName = document.getElementById('input-progetto').value;
-        if (!projectName) {
-            alert("Carica o crea un preventivo prima di aggiungere una nota.");
-            return;
-        }
-        const noteText = prompt(`Inserisci una nota per "${projectName}":`);
+        const noteText = document.getElementById('new-note-textarea').value;
         if (noteText && noteText.trim() !== "") {
-            await dataManager.addNote(projectName, noteText.trim());
-            alert("Nota salvata con successo!");
+            try {
+                await dataManager.addNote(projectName, noteText.trim());
+                alert("Nota salvata con successo!");
+                document.getElementById('note-modal').classList.remove('open');
+            } catch (error) {
+                alert("Errore nel salvataggio della nota.");
+            }
+        } else {
+            document.getElementById('note-modal').classList.remove('open');
         }
     });
     
@@ -653,6 +718,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('costs-section').addEventListener('input', handleDataInput);
     
     document.getElementById('show-loader-btn').addEventListener('click', () => {
+        isAdminAuthenticated = false; 
         document.getElementById('main-content').classList.add('hidden');
         document.getElementById('initial-loader').classList.remove('hidden');
         currentQuoteId = null;
@@ -674,12 +740,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.querySelectorAll('.modal').forEach(modal => {
         modal.addEventListener('click', (e) => {
-            if (e.target === modal || e.target.closest('.close-btn, #password-cancel-btn')) {
+            if (e.target === modal || e.target.closest('.close-btn, #note-cancel-btn, #password-cancel-btn')) {
                 modal.classList.remove('open');
             }
         });
     });
 
+    // Aggiungi l'observer per il riepilogo sticky
+    const summarySection = document.getElementById('summary-section');
+    const header = document.querySelector('#main-content header');
+    const fullSummaryView = document.getElementById('summary-full-view');
+    const compressedSummaryView = document.getElementById('summary-compressed-view');
+    
+    const observer = new IntersectionObserver(([e]) => {
+         const isSticky = e.intersectionRatio < 1;
+         summarySection.classList.toggle('compressed', isSticky);
+         fullSummaryView.classList.toggle('hidden', isSticky);
+         compressedSummaryView.classList.toggle('hidden', !isSticky);
+    }, {threshold: [1]});
+
+    if(header) {
+        observer.observe(header);
+    }
+    
     initializeApp();
 });
 
