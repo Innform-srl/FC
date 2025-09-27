@@ -68,7 +68,7 @@
             </header>
     
             <!-- SEZIONE 2: RIEPILOGO FINANZIARIO (STICKY) -->
-            <section id="summary-section" class="sticky top-0 z-40 mb-8 bg-gray-50/95 backdrop-blur-sm p-6 rounded-xl shadow-lg border transition-all duration-300 ease-in-out">
+            <section id="summary-section" class="sticky top-4 z-40 mb-8 bg-gray-50/95 backdrop-blur-sm p-6 rounded-xl shadow-lg border transition-all duration-300 ease-in-out">
                 
                 <!-- Vista Completa -->
                 <div id="summary-full-view">
@@ -158,32 +158,30 @@
 
                 <!-- Vista Compressa (nascosta di default) -->
                 <div id="summary-compressed-view" class="hidden">
-                     <div class="grid grid-cols-3 gap-x-4 gap-y-2 text-center">
-                        <!-- Row 1 -->
+                     <div class="grid grid-cols-6 gap-x-4 items-center text-center">
                         <div>
-                            <span class="text-xs font-medium text-gray-600">Ricavo Totale</span>
+                            <span class="text-xs font-medium text-gray-600">A. Ricavo</span>
                             <span id="compressed-summary-ricavo" class="block summary-value text-blue-700 text-base">€ 0,00</span>
                         </div>
                         <div>
-                            <span class="text-xs font-medium text-gray-600">Costo Totale Progetto</span>
+                            <span class="text-xs font-medium text-gray-600">B. Costo Totale</span>
                             <span id="compressed-summary-costo" class="block summary-value text-red-700 text-base">€ 0,00</span>
                         </div>
                         <div>
-                            <span class="text-xs font-bold text-gray-800">MARGINE</span>
-                            <span id="compressed-summary-margine" class="block summary-value text-base">€ 0,00</span>
-                        </div>
-                        <!-- Row 2 -->
-                        <div>
-                            <span class="text-xs font-medium text-gray-600">Costo Partner 1</span>
+                            <span class="text-xs font-medium text-gray-600">C. Costo P1</span>
                             <span id="compressed-summary-partnership-1" class="block summary-value text-purple-700 text-base">€ 0,00</span>
                         </div>
                         <div>
-                            <span class="text-xs font-medium text-gray-600">Costo Partner 2</span>
+                            <span class="text-xs font-medium text-gray-600">D. Costo P2</span>
                             <span id="compressed-summary-partnership-2" class="block summary-value text-orange-600 text-base">€ 0,00</span>
                         </div>
                         <div>
-                            <span class="text-xs font-medium text-gray-600">Altri Costi</span>
+                            <span class="text-xs font-medium text-gray-600">F. Altri Costi</span>
                             <span id="compressed-summary-esterno" class="block summary-value text-gray-700 text-base">€ 0,00</span>
+                        </div>
+                        <div class="bg-green-50 p-2 rounded-lg">
+                            <span class="text-xs font-bold text-gray-800">MARGINE</span>
+                            <span id="compressed-summary-margine" class="block summary-value text-base">€ 0,00</span>
                         </div>
                     </div>
                 </div>
@@ -368,6 +366,32 @@
             <div class="flex justify-end space-x-2">
                 <button id="password-cancel-btn" class="bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300">Annulla</button>
                 <button id="password-submit-btn" class="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700">Conferma</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal per le Note -->
+    <div id="note-modal" class="modal">
+        <div class="modal-content max-w-xl">
+             <div class="flex justify-between items-center mb-4">
+                <h3 id="note-modal-title" class="text-xl font-semibold">Aggiungi una Nota</h3>
+                <button class="close-btn">&times;</button>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <h4 class="text-sm font-semibold text-gray-600 mb-2">Note Esistenti:</h4>
+                    <div id="existing-notes-container" class="max-h-40 overflow-y-auto bg-gray-50 p-3 rounded-md border text-sm text-gray-700">
+                        <p class="text-gray-400 italic">Nessuna nota precedente.</p>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="text-sm font-semibold text-gray-600 mb-2">Nuova Nota:</h4>
+                    <textarea id="new-note-textarea" class="table-input w-full" rows="4" placeholder="Scrivi qui la tua nuova nota..."></textarea>
+                </div>
+            </div>
+            <div class="flex justify-end space-x-2 mt-6">
+                <button id="note-cancel-btn" class="bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300">Annulla</button>
+                <button id="note-save-btn" class="bg-green-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-green-700">Salva Nota</button>
             </div>
         </div>
     </div>
