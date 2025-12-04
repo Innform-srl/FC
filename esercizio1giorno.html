@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Palestra Digitale - Allenamento Mouse e Tastiera</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2563eb;
+            --success: #22c55e;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            user-select: none; /* Disabilita selezione globale per i giochi drag&drop */
+        }
+
+        #app-container {
+            background: var(--card);
+            width: 900px;
+            min-height: 600px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 2px solid #e2e8f0;
+        }
+
+        /* Header */
+        header {
+            background: var(--primary);
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        #progress-container {
+            width: 60%;
+            background: rgba(255,255,255,0.3);
+            height: 10px;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        #progress-bar {
+            height: 100%;
+            background: #4ade80;
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+
+        /* Game Area */
+        #game-area {
+            flex-grow: 1;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            position: relative;
+        }
+
+        h2 { font-size: 28px; margin-bottom: 10px; }
+        p.instruction { font-size: 20px; color: #64748b; margin-bottom: 30px; }
+
+        /* Elements for Exercises */
+        .btn {
+            background: var(--primary);
+            color: white;
+            padding: 15px 30px;
+            font-size: 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+        .btn:active { transform: scale(0.95); }
+        .btn:hover { background: #1d4ed8; }
+
+        .target-circle {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: #ef4444;
+            position: absolute;
+            cursor: crosshair;
+        }
+
+        .folder-icon {
+            font-size: 60px;
+            color: #f59e0b;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .drop-zone {
+            width: 150px;
+            height: 150px;
+            border: 3px dashed #cbd5e1;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 20px;
+            background: #f1f5f9;
+        }
+
+        .draggable {
+            width: 80px;
+            height: 80px;
+            background: var(--primary);
+            color: white;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: grab;
+            position: absolute;
+        }
+
+        input[type="text"] {
+            font-size: 24px;
+            padding: 10px;
+            border: 2px solid #cbd5e1;
+            border-radius: 8px;
+            width: 80%;
+            text-align: center;
+        }
+        input:focus { outline: none; border-color: var(--primary); }
+
+        /* Feedback Overlay */
+        #feedback {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255,255,255,0.9);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            z-index: 10;
+        }
+        .success-msg { color: var(--success); font-size: 40px; font-weight: bold; }
+        
+        .hidden { display: none !important; }
+
+        /* Specific Levels Styles */
+        .grid-game { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+        .tiny-btn { padding: 5px; font-size: 12px; }
+        
+        /* Enable selection for level 16 */
+        .selectable-text {
+            user-select: text !important;
+            -webkit-user-select: text !important;
+            cursor: text;
+            padding: 10px;
+            border: 1px dashed #cbd5e1;
+        }
+
+    </style>
+</head>
+<body>
+
+<div id="app-container">
+    <header>
+        <div>LIVELLO <span id="level-indicator">1</span>/20</div>
+        <div id="progress-container">
+            <div id="progress-bar"></div>
+        </div>
+    </header>
+
+    <div id="game-area">
+        <!-- Content injected via JS -->
+    </div>
+
+    <div id="feedback">
+        <div class="success-msg">OTTIMO!</div>
+        <button class="btn" onclick="nextLevel()" style="margin-top:20px;">Prossimo Livello &rarr;</button>
+    </div>
+</div>
+
+<script>
+    const levels = [
+        // MOUSE BASICS
+        {
+            id: 1,
+            title: "Il Clic Sinistro",
+            instruction: "Clicca una volta sul pulsante blu.",
+            type: "click",
+            render: () => `<button class="btn" id="target-btn">CLICCA QUI</button>`,
+            setup: (resolve) => {
+                document.getElementById('target-btn').onclick = () => resolve();
+            }
+        },
+        {
+            id: 2,
+            title: "Doppio Clic",
+            instruction: "Fai DOPPIO CLIC veloce sulla cartella per aprirla.",
+            type: "dblclick",
+            render: () => `<div id="folder" class="folder-icon">📁<span style="font-size:16px; color:#333">Documenti</span></div>`,
+            setup: (resolve) => {
+                document.getElementById('folder').ondblclick = () => {
+                    document.getElementById('folder').innerHTML = '📂<span style="font-size:16px; color:#333">Aperta!</span>';
+                    setTimeout(resolve, 500);
+                }
+            }
+        },
+        {
+            id: 3,
+            title: "Tasto Destro",
+            instruction: "Clicca col TASTO DESTRO sul quadrato grigio per vedere il menu segreto.",
+            type: "context",
+            render: () => `<div id="ctx-area" style="width:200px; height:200px; background:#cbd5e1; display:flex; align-items:center; justify-content:center; border-radius:10px;">Clicca col Destro QUI</div>`,
+            setup: (resolve) => {
+                const area = document.getElementById('ctx-area');
+                area.oncontextmenu = (e) => {
+                    e.preventDefault();
+                    area.style.background = '#4ade80';
+                    area.innerText = "BRAVO!";
+                    setTimeout(resolve, 800);
+                }
+            }
+        },
+        {
+            id: 4,
+            title: "Precisione Mouse 1",
+            instruction: "Clicca su tutti e 3 i cerchi rossi. Non cliccare fuori!",
+            type: "precision",
+            render: () => `<div style="position:relative; width:100%; height:300px;">
+                <div class="target-circle" style="top:20px; left:20px;" onclick="hit(this)"></div>
+                <div class="target-circle" style="top:150px; right:50px;" onclick="hit(this)"></div>
+                <div class="target-circle" style="bottom:20px; left:40%;" onclick="hit(this)"></div>
+            </div>`,
+            setup: (resolve) => {
+                let hits = 0;
+                window.hit = (el) => {
+                    el.style.display = 'none';
+                    hits++;
+                    if(hits === 3) resolve();
+                }
+            }
+        },
+        {
+            id: 5,
+            title: "Mouse Hover (Sospensione)",
+            instruction: "Porta il mouse sopra il pulsante e ASPETTA 2 secondi senza cliccare.",
+            type: "hover",
+            render: () => `<div id="hover-btn" style="padding:20px; background:#f59e0b; color:white; border-radius:8px; cursor:wait;">NON CLICCARE, RESTA QUI SOPRA</div><div id="timer" style="margin-top:10px; font-size:24px; font-weight:bold;">0%</div>`,
+            setup: (resolve) => {
+                const btn = document.getElementById('hover-btn');
+                const timerDisplay = document.getElementById('timer');
+                let timer = null;
+                let progress = 0;
+
+                btn.onmouseenter = () => {
+                    btn.style.background = '#ea580c';
+                    timer = setInterval(() => {
+                        progress += 5; // 5% every 100ms = 2000ms total
+                        timerDisplay.innerText = progress + '%';
+                        if(progress >= 100) {
+                            clearInterval(timer);
+                            resolve();
+                        }
+                    }, 100);
+                }
+                btn.onmouseleave = () => {
+                    clearInterval(timer);
+                    progress = 0;
+                    timerDisplay.innerText = '0%';
+                    btn.style.background = '#f59e0b';
+                }
+            }
+        },
+        
+        // DRAG AND DROP
+        {
+            id: 6,
+            title: "Trascinamento Base",
+            instruction: "Trascina il pacco blu dentro la scatola grigia.",
+            type: "drag",
+            render: () => `
+                <div style="display:flex; justify-content:space-between; width:100%; align-items:center; height:300px; position:relative;">
+                    <div id="draggable" class="draggable" style="position:relative; left:0; cursor:grab;">PACCO</div>
+                    <div id="droppable" class="drop-zone">SCATOLA</div>
+                </div>
+            `,
+            setup: (resolve) => setupDrag('draggable', 'droppable', resolve)
+        },
+        {
+            id: 7,
+            title: "Cestino",
+            instruction: "Butta il file 'Errore' nel cestino rosso.",
+            type: "drag",
+            render: () => `
+                <div style="display:flex; justify-content:space-between; width:100%; align-items:center; height:300px;">
+                    <div id="file-drag" class="draggable" style="position:relative; background:#ef4444;">ERRORE</div>
+                    <div id="bin-drop" class="drop-zone" style="border-color:#ef4444;">🗑️ CESTINO</div>
+                </div>
+            `,
+            setup: (resolve) => setupDrag('file-drag', 'bin-drop', resolve)
+        },
+        
+        // KEYBOARD
+        {
+            id: 8,
+            title: "La Tastiera: Lettere",
+            instruction: "Scrivi il tuo nome nella casella qui sotto.",
+            type: "type",
+            render: () => `<input type="text" id="input-name" placeholder="Scrivi qui..." autocomplete="off">`,
+            setup: (resolve) => {
+                const input = document.getElementById('input-name');
+                input.focus();
+                input.oninput = () => {
+                    if(input.value.length > 2) {
+                        setTimeout(resolve, 1000); // Allow them to finish typing
+                    }
+                }
+            }
+        },
+        {
+            id: 9,
+            title: "La Barra Spaziatrice",
+            instruction: "Scrivi esattamente: 'mela pera' (usa lo SPAZIO al centro).",
+            type: "type-exact",
+            render: () => `<div style="font-size:30px; margin-bottom:10px; font-weight:bold;">mela pera</div><input type="text" id="input-space" autocomplete="off">`,
+            setup: (resolve) => setupTyping('input-space', 'mela pera', resolve)
+        },
+        {
+            id: 10,
+            title: "Tasto BACKSPACE (Cancella)",
+            instruction: "Ho sbagliato a scrivere 'scuola'. Correggi l'errore cancellando la 'k'.",
+            type: "correction",
+            render: () => `<input type="text" id="input-err" value="scuokla" style="color:red;">`,
+            setup: (resolve) => {
+                const input = document.getElementById('input-err');
+                input.focus();
+                // Move cursor to end
+                input.setSelectionRange(10, 10);
+                input.oninput = () => {
+                    if(input.value === 'scuola') {
+                        input.style.color = 'green';
+                        resolve();
+                    }
+                }
+            }
+        },
+        {
+            id: 11,
+            title: "Tasto INVIO",
+            instruction: "Scrivi 'ciao' e poi premi il tasto INVIO per spedire.",
+            type: "enter",
+            render: () => `<input type="text" id="input-enter" placeholder="Scrivi ciao...">`,
+            setup: (resolve) => {
+                const input = document.getElementById('input-enter');
+                input.focus();
+                input.addEventListener('keyup', (e) => {
+                    if (e.key === 'Enter' && input.value.toLowerCase().trim() === 'ciao') {
+                        resolve();
+                    }
+                });
+            }
+        },
+        {
+            id: 12,
+            title: "Maiuscole (Shift)",
+            instruction: "Usa il tasto MAIUSC (Freccia su) per scrivere: 'Roma'",
+            type: "shift",
+            render: () => `<div style="font-size:30px; margin-bottom:10px;">Roma</div><input type="text" id="input-shift">`,
+            setup: (resolve) => setupTyping('input-shift', 'Roma', resolve)
+        },
+        {
+            id: 13,
+            title: "Tutto Maiuscolo (Caps Lock)",
+            instruction: "Attiva il Lucchetto (Caps Lock) e scrivi: 'STOP'",
+            type: "caps",
+            render: () => `<div style="font-size:30px; margin-bottom:10px;">STOP</div><input type="text" id="input-caps">`,
+            setup: (resolve) => setupTyping('input-caps', 'STOP', resolve)
+        },
+        {
+            id: 14,
+            title: "I Numeri",
+            instruction: "Scrivi l'anno corrente (es. 2024 o 2025).",
+            type: "nums",
+            render: () => `<input type="text" id="input-nums" placeholder="Anno...">`,
+            setup: (resolve) => {
+                const input = document.getElementById('input-nums');
+                input.focus();
+                input.oninput = () => {
+                    if(input.value.length === 4 && !isNaN(input.value)) resolve();
+                }
+            }
+        },
+        {
+            id: 15,
+            title: "La Chiocciola @",
+            instruction: "Per fare la chiocciola premi 'Alt Gr' + 'ò' (o @). Scrivi: info@mail.it",
+            type: "symbol",
+            render: () => `<div style="font-size:24px; margin-bottom:10px;">info@mail.it</div><input type="text" id="input-at">`,
+            setup: (resolve) => setupTyping('input-at', 'info@mail.it', resolve)
+        },
+
+        // ADVANCED / MIXED
+        {
+            id: 16,
+            title: "Selezione del Testo",
+            instruction: "Seleziona con il mouse (tieni premuto e trascina) SOLO la parola 'IMPORTANTE' e poi clicca il bottone.",
+            type: "select",
+            render: () => `
+                <p id="text-select" class="selectable-text" style="font-size:24px;">Questo testo non serve. IMPORTANTE Questo nemmeno.</p>
+                <button class="btn" onmousedown="event.preventDefault(); checkSelection()">Ho Selezionato</button>
+                <p id="sel-debug" style="color:gray; font-size:16px; min-height:24px; margin-top:10px;">Fai la selezione...</p>
+            `,
+            setup: (resolve) => {
+                // Monitoraggio in tempo reale per aiutare l'utente
+                document.addEventListener('selectionchange', () => {
+                    const sel = window.getSelection().toString();
+                    const debug = document.getElementById('sel-debug');
+                    if(debug) {
+                        if(sel.length > 0) debug.innerText = "Stai selezionando: [" + sel + "]";
+                        else debug.innerText = "Fai la selezione...";
+                    }
+                });
+
+                window.checkSelection = () => {
+                    const selection = window.getSelection().toString();
+                    // Usiamo trim() per perdonare piccoli spazi vuoti all'inizio o alla fine
+                    if(selection.trim() === 'IMPORTANTE') {
+                        resolve();
+                    } else {
+                        alert("Attenzione!\nHai selezionato: '" + selection + "'\nDevi selezionare esattamente la parola: IMPORTANTE");
+                    }
+                }
+            }
+        },
+        {
+            id: 17,
+            title: "Precisione Mouse 2",
+            instruction: "Clicca solo sui numeri PARI (2, 4, 6...). Ignora i dispari!",
+            type: "logic-click",
+            render: () => {
+                let html = '<div class="grid-game">';
+                for(let i=1; i<=10; i++) {
+                    html += `<button class="btn tiny-btn" style="background:#64748b" onclick="checkNum(this, ${i})">${i}</button>`;
+                }
+                html += '</div>';
+                return html;
+            },
+            setup: (resolve) => {
+                let correct = 0;
+                window.checkNum = (btn, num) => {
+                    if(num % 2 === 0) {
+                        btn.style.background = '#22c55e';
+                        btn.disabled = true;
+                        correct++;
+                        if(correct === 5) resolve();
+                    } else {
+                        btn.style.background = '#ef4444';
+                        setTimeout(() => btn.style.background = '#64748b', 500);
+                    }
+                }
+            }
+        },
+        {
+            id: 18,
+            title: "Checklist (Moduli)",
+            instruction: "Clicca sui quadratini per selezionare 'Pane' e 'Acqua', poi premi 'Invia'.",
+            type: "form",
+            render: () => `
+                <div style="text-align:left; font-size:24px;">
+                    <label><input type="checkbox" id="c1"> Pane</label><br>
+                    <label><input type="checkbox" id="c2"> Vino</label><br>
+                    <label><input type="checkbox" id="c3"> Acqua</label>
+                </div>
+                <button class="btn" style="margin-top:20px;" onclick="checkForm()">Invia</button>
+            `,
+            setup: (resolve) => {
+                window.checkForm = () => {
+                    const c1 = document.getElementById('c1').checked;
+                    const c2 = document.getElementById('c2').checked;
+                    const c3 = document.getElementById('c3').checked;
+                    if(c1 && c3 && !c2) resolve();
+                    else alert("Seleziona solo Pane e Acqua!");
+                }
+            }
+        },
+        {
+            id: 19,
+            title: "Velocità",
+            instruction: "Clicca il pulsante verde prima che scappi! (3 volte)",
+            type: "speed",
+            render: () => `<div id="game-area-box" style="width:100%; height:400px; position:relative;"><button id="runner" class="btn" style="position:absolute; background:#22c55e;">PRENDIMI!</button></div>`,
+            setup: (resolve) => {
+                const btn = document.getElementById('runner');
+                const box = document.getElementById('game-area-box');
+                let hits = 0;
+                
+                const move = () => {
+                    const x = Math.random() * (box.offsetWidth - 100);
+                    const y = Math.random() * (box.offsetHeight - 50);
+                    btn.style.left = x + 'px';
+                    btn.style.top = y + 'px';
+                }
+
+                btn.onclick = () => {
+                    hits++;
+                    btn.innerText = `PRESO ${hits}/3`;
+                    if(hits >= 3) resolve();
+                    else move();
+                };
+                
+                // Move every 800ms automatically to make it harder
+                const runner = setInterval(move, 800);
+                // Cleanup on end
+                const oldResolve = resolve;
+                resolve = () => { clearInterval(runner); oldResolve(); }
+            }
+        },
+        {
+            id: 20,
+            title: "Sfida Finale",
+            instruction: "Scrivi 'Finito' e poi clicca il pulsante rosso.",
+            type: "final",
+            render: () => `
+                <input type="text" id="final-inp" placeholder="Scrivi qui...">
+                <br><br>
+                <button id="final-btn" class="btn" style="background:#ef4444; display:none;">TERMINA</button>
+            `,
+            setup: (resolve) => {
+                const inp = document.getElementById('final-inp');
+                const btn = document.getElementById('final-btn');
+                
+                inp.oninput = () => {
+                    if(inp.value.toLowerCase() === 'finito') {
+                        btn.style.display = 'inline-block';
+                    }
+                }
+                btn.onclick = resolve;
+            }
+        }
+    ];
+
+    let currentLevel = 0;
+
+    function initGame() {
+        loadLevel(currentLevel);
+    }
+
+    function loadLevel(idx) {
+        if(idx >= levels.length) {
+            showVictory();
+            return;
+        }
+
+        const level = levels[idx];
+        const gameArea = document.getElementById('game-area');
+        const levelInd = document.getElementById('level-indicator');
+        const progressBar = document.getElementById('progress-bar');
+
+        // Update UI
+        levelInd.innerText = level.id;
+        const progressPct = ((idx) / levels.length) * 100;
+        progressBar.style.width = progressPct + '%';
+
+        // Render HTML
+        gameArea.innerHTML = `
+            <h2>${level.title}</h2>
+            <p class="instruction">${level.instruction}</p>
+            <div id="level-content" style="width:100%; display:flex; flex-direction:column; align-items:center;">
+                ${level.render()}
+            </div>
+        `;
+
+        // Attach Logic
+        level.setup(() => showFeedback());
+    }
+
+    function showFeedback() {
+        const fb = document.getElementById('feedback');
+        fb.style.display = 'flex';
+        // Play sound (optional, kept silent for classroom)
+    }
+
+    function nextLevel() {
+        document.getElementById('feedback').style.display = 'none';
+        currentLevel++;
+        loadLevel(currentLevel);
+    }
+
+    function showVictory() {
+        document.getElementById('game-area').innerHTML = `
+            <h1 style="color:#22c55e; font-size:60px;">COMPLIMENTI!</h1>
+            <p style="font-size:30px;">Hai completato l'addestramento.</p>
+            <div style="font-size:100px;">🏆</div>
+            <button class="btn" onclick="location.reload()">Ricomincia</button>
+        `;
+        document.getElementById('progress-bar').style.width = '100%';
+    }
+
+    // Generic Helpers
+    function setupTyping(id, expected, callback) {
+        const input = document.getElementById(id);
+        input.focus();
+        input.oninput = () => {
+            if(input.value === expected) {
+                input.style.borderColor = '#22c55e';
+                input.style.color = '#22c55e';
+                setTimeout(callback, 500);
+            }
+        }
+    }
+
+    // Simple Vanilla Drag Implementation for compatibility
+    function setupDrag(dragId, dropId, callback) {
+        const dragEl = document.getElementById(dragId);
+        const dropEl = document.getElementById(dropId);
+        
+        let isDragging = false;
+        let startX, startY, initLeft, initTop;
+
+        dragEl.addEventListener('mousedown', startDrag);
+        // Touch support
+        dragEl.addEventListener('touchstart', (e) => startDrag(e.touches[0]));
+
+        function startDrag(e) {
+            isDragging = true;
+            startX = e.clientX;
+            startY = e.clientY;
+            
+            // Get current position (relative)
+            const rect = dragEl.getBoundingClientRect();
+            // Since we are using relative positioning in CSS, we need to manipulate transform or absolute
+            // Let's switch to simple fixed manipulation for the demo visual
+            dragEl.style.zIndex = 100;
+        }
+
+        document.addEventListener('mousemove', moveDrag);
+        document.addEventListener('touchmove', (e) => moveDrag(e.touches[0]));
+
+        function moveDrag(e) {
+            if(!isDragging) return;
+            e.preventDefault(); // prevent scroll on touch
+            const dx = e.clientX - startX;
+            const dy = e.clientY - startY;
+            dragEl.style.transform = `translate(${dx}px, ${dy}px)`;
+        }
+
+        document.addEventListener('mouseup', endDrag);
+        document.addEventListener('touchend', endDrag);
+
+        function endDrag(e) {
+            if(!isDragging) return;
+            isDragging = false;
+
+            const dragRect = dragEl.getBoundingClientRect();
+            const dropRect = dropEl.getBoundingClientRect();
+
+            // Check overlap
+            if (
+                dragRect.left < dropRect.right &&
+                dragRect.right > dropRect.left &&
+                dragRect.top < dropRect.bottom &&
+                dragRect.bottom > dropRect.top
+            ) {
+                // Success
+                dragEl.style.display = 'none';
+                dropEl.style.background = '#4ade80';
+                dropEl.innerHTML = "FATTO!";
+                callback();
+            } else {
+                // Reset
+                dragEl.style.transform = 'translate(0,0)';
+            }
+        }
+    }
+
+    // Start
+    initGame();
+
+</script>
+
+</body>
+</html>
